@@ -367,28 +367,44 @@ function searchProductById() {
 function selectProductForBilling(index) {
     const product = allProducts[index];
     
-    // Check if product already in cart
+    if (!product) {
+        showNotification('❌ Product not found');
+        return;
+    }
+    
+    // Check if product already in cart by comparing product IDs
     const existingItem = currentCart.find(item => item.id === product.id);
     
     if (existingItem) {
+        // Product already in cart - increase quantity
         existingItem.quantity++;
+        console.log(`✓ Increased quantity of "${product.name}" to ${existingItem.quantity}`);
+        showNotification(`✓ "${product.name}" quantity updated to ${existingItem.quantity}`);
     } else {
+        // New product - add to cart
         currentCart.push({
             id: product.id,
             name: product.name,
             price: product.price,
             quantity: 1
         });
+        console.log(`✓ Added "${product.name}" to cart (Quantity: 1)`);
+        showNotification(`✓ Added "${product.name}" to cart (Quantity: 1)`);
     }
 
     document.getElementById('productIdSearch').value = '';
     renderBillingProducts();
     updateCart();
-    showNotification(`✓ Added "${product.name}" to cart`);
 }
 
 function addProductToCart() {
     const productId = document.getElementById('productIdSearch').value.trim();
+    
+    if (!productId) {
+        showNotification('❌ Please enter a Product ID');
+        return;
+    }
+    
     const product = allProducts.find(p => p.id === productId);
 
     if (!product) {
@@ -396,7 +412,29 @@ function addProductToCart() {
         return;
     }
 
-    selectProductForBilling(allProducts.indexOf(product));
+    // Check if product already in cart
+    const existingItem = currentCart.find(item => item.id === product.id);
+    
+    if (existingItem) {
+        // Product already in cart - increase quantity
+        existingItem.quantity++;
+        console.log(`✓ Increased quantity of "${product.name}" to ${existingItem.quantity}`);
+        showNotification(`✓ "${product.name}" quantity updated to ${existingItem.quantity}`);
+    } else {
+        // New product - add to cart
+        currentCart.push({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: 1
+        });
+        console.log(`✓ Added "${product.name}" to cart (Quantity: 1)`);
+        showNotification(`✓ Added "${product.name}" to cart (Quantity: 1)`);
+    }
+
+    document.getElementById('productIdSearch').value = '';
+    renderBillingProducts();
+    updateCart();
 }
 
 function updateCart() {
