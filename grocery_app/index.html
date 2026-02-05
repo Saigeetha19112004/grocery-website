@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Shop Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="page active">
+        <div class="login-container">
+            <div class="login-card">
+                <h1>🛒 Grocery Shop Manager</h1>
+                <p class="login-subtitle">Select Your Role</p>
+                
+                <div class="role-buttons">
+                    <button class="btn btn-primary btn-large" onclick="loginAsAdmin()">
+                        👨‍💼 Admin Login
+                    </button>
+                    <button class="btn btn-success btn-large" onclick="loginAsManager()">
+                        💳 Billing/Manager
+                    </button>
+                </div>
+                
+                <p class="login-info">Admin: Manage inventory and products<br>Manager: Handle customer billing</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard Page -->
+    <div id="adminPage" class="page">
+        <!-- Navigation Widget -->
+        <div class="nav-widget">
+            <button class="widget-btn" onclick="showBillingPage()" title="Switch to Billing Manager">
+                <span class="widget-icon">💳</span>
+                <span class="widget-text">Billing</span>
+            </button>
+        </div>
+
+        <div class="admin-container">
+            <header>
+                <h1>👨‍💼 Admin Dashboard</h1>
+                <div class="header-buttons">
+                    <button class="btn btn-secondary" onclick="logout()">Logout</button>
+                </div>
+            </header>
+
+            <div class="admin-layout">
+                <!-- Left Panel - Inventory -->
+                <aside class="admin-sidebar">
+                    <h2>📦 Product Inventory</h2>
+                    
+                    <!-- Upload Excel -->
+                    <div class="upload-section">
+                        <h3>Upload Products</h3>
+                        <div class="file-upload">
+                            <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" onchange="handleFileUpload(event)" style="display: none;">
+                            <label for="excelFile">Choose Excel/CSV File</label>
+                        </div>
+                        <p class="info-text">📋 Column names: Product ID, Product Name, Price</p>
+                        <p class="info-text" style="font-size: 0.85em; color: #999; margin-top: 10px;">✓ Supports: .xlsx, .xls, .csv files</p>
+                    </div>
+
+                    <!-- Inventory List -->
+                    <div class="inventory-list">
+                        <h3>Current Inventory</h3>
+                        <div id="inventoryItems" class="items-list">
+                            <!-- Products will be listed here -->
+                        </div>
+                        <div id="emptyInventory" class="empty-message">No products. Upload Excel to get started.</div>
+                    </div>
+                </aside>
+
+                <!-- Right Panel - Management -->
+                <main class="admin-main">
+                    <!-- Add Manual Product -->
+                    <section class="management-section">
+                        <h2>Add Product Manually</h2>
+                        <div class="form-container">
+                            <div class="form-group">
+                                <label for="adminProductId">Product ID:</label>
+                                <input type="text" id="adminProductId" placeholder="e.g., P001">
+                            </div>
+                            <div class="form-group">
+                                <label for="adminProductName">Product Name:</label>
+                                <input type="text" id="adminProductName" placeholder="Enter product name">
+                            </div>
+                            <div class="form-group">
+                                <label for="adminProductPrice">Price (₹):</label>
+                                <input type="number" id="adminProductPrice" placeholder="Enter price" step="0.01">
+                            </div>
+                            <button class="btn btn-success" onclick="addProductManually()">Add Product</button>
+                        </div>
+                    </section>
+
+                    <!-- Statistics Section -->
+                    <section class="management-section">
+                        <h2>📊 Today's Statistics</h2>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <h4>Total Products</h4>
+                                <p class="stat-value" id="adminTotalProducts">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <h4>Total Customers</h4>
+                                <p class="stat-value" id="adminTotalCustomers">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <h4>Total Revenue</h4>
+                                <p class="stat-value">₹<span id="adminTotalRevenue">0.00</span></p>
+                            </div>
+                            <div class="stat-card">
+                                <h4>Avg Order Value</h4>
+                                <p class="stat-value">₹<span id="adminAvgOrder">0.00</span></p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Customers Transaction History -->
+                    <section class="management-section">
+                        <h2>💳 Customer Transactions</h2>
+                        <div id="customersTransactionTable" class="transaction-table-wrapper">
+                            <table class="transaction-table">
+                                <thead>
+                                    <tr>
+                                        <th>Customer Name</th>
+                                        <th>Phone</th>
+                                        <th>Items</th>
+                                        <th>Total Amount</th>
+                                        <th>Date & Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionTableBody">
+                                    <!-- Transactions will be listed here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="emptyTransactions" class="empty-message">No transactions yet.</div>
+                    </section>
+
+                    <!-- Analytics -->
+                    <section class="management-section">
+                        <h2>🤖 ML Analytics</h2>
+                        <button class="btn btn-primary" onclick="showMLAnalyticsPage()">View ML Analytics</button>
+                    </section>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Billing Page -->
+    <div id="billingPage" class="page">
+        <!-- Navigation Widget -->
+        <div class="nav-widget">
+            <button class="widget-btn" onclick="showAdminPage()" title="Switch to Admin">
+                <span class="widget-icon">👨‍💼</span>
+                <span class="widget-text">Admin</span>
+            </button>
+        </div>
+
+        <header>
+            <h1>💳 Customer Billing System</h1>
+            <div class="header-buttons">
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="billing-container">
+            <!-- Left: Product Search & Available Products -->
+            <aside class="billing-sidebar">
+                <h2>🔍 Product Search</h2>
+                
+                <!-- Product ID Search -->
+                <div class="search-section">
+                    <div class="form-group">
+                        <label for="productIdSearch">Enter Product ID:</label>
+                        <div class="search-input-group">
+                            <input type="text" id="productIdSearch" placeholder="e.g., P001" onkeyup="searchProductById()">
+                            <button class="btn btn-primary btn-small" onclick="addProductToCart()">Add</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Products List -->
+                <div class="products-list">
+                    <h3>📦 Available Products</h3>
+                    <div id="billingProductsList" class="products-items">
+                        <!-- Products will be listed here -->
+                    </div>
+                    <div id="emptyBillingProducts" class="empty-message">No products available.</div>
+                </div>
+            </aside>
+
+            <!-- Right: Billing Invoice -->
+            <main class="billing-main">
+                <!-- Customer Details -->
+                <section class="billing-section">
+                    <h2>👤 Customer Details</h2>
+                    <div class="form-container">
+                        <div class="form-group">
+                            <label for="customerName">Customer Name:</label>
+                            <input type="text" id="customerName" placeholder="Enter customer name">
+                        </div>
+                        <div class="form-group">
+                            <label for="customerPhone">Phone Number:</label>
+                            <input type="tel" id="customerPhone" placeholder="Enter phone number">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Shopping Cart -->
+                <section class="billing-section">
+                    <h2>🛒 Shopping Cart</h2>
+                    <div id="cartItemsContainer" class="cart-items">
+                        <div id="emptyCart" class="empty-message">No items in cart. Search products to add.</div>
+                        <table id="cartTable" class="cart-table" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Invoice Summary -->
+                <section class="billing-section invoice-section">
+                    <h2>📋 Invoice Summary</h2>
+                    <div class="invoice-details">
+                        <div class="invoice-row">
+                            <span>Subtotal:</span>
+                            <span>₹<span id="subtotal">0.00</span></span>
+                        </div>
+                        <div class="invoice-row">
+                            <span>Tax (0%):</span>
+                            <span>₹<span id="tax">0.00</span></span>
+                        </div>
+                        <div class="invoice-row total">
+                            <span>Total Amount:</span>
+                            <span>₹<span id="totalAmount">0.00</span></span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Action Buttons -->
+                <section class="billing-actions">
+                    <button class="btn btn-danger btn-large" onclick="clearCart()">Clear Cart</button>
+                    <button class="btn btn-success btn-large" onclick="completePurchase()">Complete Purchase</button>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- ML Analytics Page -->
+    <div id="mlAnalyticsPage" class="page">
+        <header>
+            <h1>🤖 ML Analytics & Predictions</h1>
+            <div class="header-buttons">
+                <button class="btn btn-primary" onclick="goBackToAdmin()">Back to Admin</button>
+            </div>
+        </header>
+
+        <main style="max-width: 1200px; margin: 0 auto;">
+            <!-- ML Insights Section -->
+            <section class="ml-section">
+                <div class="ml-grid">
+                    <!-- Sales Forecast -->
+                    <div class="ml-card">
+                        <h3>📈 Sales Forecast</h3>
+                        <p class="ml-label">Predicted Tomorrow's Sales</p>
+                        <p class="ml-value">₹<span id="mlSalesForecast">0.00</span></p>
+                        <p class="ml-small">Based on sales patterns</p>
+                    </div>
+
+                    <!-- Weekly Prediction -->
+                    <div class="ml-card">
+                        <h3>📅 Weekly Projection</h3>
+                        <p class="ml-label">Estimated Week Sales</p>
+                        <p class="ml-value">₹<span id="mlWeeklyForecast">0.00</span></p>
+                        <p class="ml-small">7 days prediction</p>
+                    </div>
+
+                    <!-- Product Demand -->
+                    <div class="ml-card">
+                        <h3>⭐ Product Demand</h3>
+                        <p class="ml-label">Most Demanded Product</p>
+                        <p class="ml-value" id="mlDemandProduct">N/A</p>
+                        <p class="ml-small">Based on sales data</p>
+                    </div>
+
+                    <!-- Average Order Value -->
+                    <div class="ml-card">
+                        <h3>💰 Avg Order Value</h3>
+                        <p class="ml-label">Customer Average Spend</p>
+                        <p class="ml-value">₹<span id="mlAvgOrderValue">0.00</span></p>
+                        <p class="ml-small">ML-predicted metric</p>
+                    </div>
+
+                    <!-- Peak Hours -->
+                    <div class="ml-card">
+                        <h3>⏰ Peak Hours</h3>
+                        <p class="ml-label">Busiest Time</p>
+                        <p class="ml-value" id="mlPeakHours">N/A</p>
+                        <p class="ml-small">Expected rush time</p>
+                    </div>
+
+                    <!-- Trend Analysis -->
+                    <div class="ml-card">
+                        <h3>🎯 Trend Analysis</h3>
+                        <p class="ml-label">Sales Trend</p>
+                        <p class="ml-value" id="mlTrend">Stable</p>
+                        <p class="ml-small">Growth direction</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Product Intelligence -->
+            <section class="stats-section">
+                <h2>🧠 Top Selling Products</h2>
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Product ID</th>
+                            <th>Product Name</th>
+                            <th>Units Sold</th>
+                            <th>Revenue</th>
+                            <th>Demand %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mlProductTableBody">
+                        <!-- Product stats will be added here -->
+                    </tbody>
+                </table>
+                <div id="emptyMLProducts" class="empty-message">No sales data yet.</div>
+            </section>
+
+            <!-- Chart -->
+            <section class="stats-section">
+                <h2>Sales Trend Over Time</h2>
+                <canvas id="mlTrendCanvas" style="max-height: 400px; margin-bottom: 20px;"></canvas>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
