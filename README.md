@@ -195,22 +195,11 @@ cd grocery_app
 
 ---
 
-## 🚀 Deployment
 
-### Quick Deploy (Netlify) - Recommended
-Takes 2-3 minutes:
-
-1. Push code to GitHub
-2. Connect to Netlify
-3. Get your live URL
 
 See `DEPLOYMENT_GUIDE.md` for detailed instructions on:
 - ✅ **Netlify** (Fastest, Recommended)
-- ✅ **GitHub Pages** (Free)
-- ✅ **Vercel** (High Performance)
-- ✅ **Firebase** (Google Platform)
-- ✅ **Traditional Hosting** (Paid Options)
-- ✅ **Local Testing** (Python Server)
+
 
 ---
 
@@ -444,7 +433,7 @@ For issues, questions, or suggestions:
 
 ## 🎯 Quick Links
 
-- [View Live Demo](#deployment) (after deployment)
+- Link : https://sprightly-dango-78c079.netlify.app/  
 - [Deployment Guide](DEPLOYMENT_GUIDE.md)
 - [Quick Deploy to Netlify](QUICK_DEPLOY.md)
 - [GitHub Repository](https://github.com/yourusername/grocery_app)
